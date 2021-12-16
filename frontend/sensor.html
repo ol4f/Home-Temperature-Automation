@@ -1,0 +1,108 @@
+<head>
+    <meta charset="utf-8">
+    <title>Temperature</title>
+
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:400,700" rel="stylesheet">
+    <link href='style.css' rel='stylesheet' type='text/css'>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+    <script type="application/javascript" src="values.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+
+	<center></centre><h2 id="title" class="title">Temperature</h2></center>
+<hr>
+
+<p class="question" id="text">Press "Fetch temperature"</p>
+<div id="answers">
+    <button class="button" id="get_val" onclick="fetch_temp()" style="background-color: #AFAF4C;">Fetch temperature</button>
+    <hr>
+    <hr>
+    <input type="number" step="0.1" id="rad" class="num_input" maxlength="3" min="0" max="5"><br>
+    <select id="window" class="selection"></select><br>
+    <select id="feel" class="selection"></select><br>
+    <select id="home" class="selection"></select><br>
+    <hr>
+    <button class="button" id="submit" onclick="submit()" style="background-color: #4e24c2;">Submit</button> <br>
+</div>
+
+<!-- Test JS -->
+<script>
+
+    function fetch_temp() {
+        $.getJSON("http://pi.hole:8000/fetch", function (data) {
+            var items = {};
+            $.each(data, function (key, val) {
+                items[key] = val
+            });
+            $('#text').text(`Temp: ${items["temp"]} °C\nHumid: ${items["hum"]} %`)
+        });
+    }
+
+    function fetch_state() {
+        var home = {}
+        $.getJSON("http://pi.hole:8000/state", function (data) {
+            var actData = {};
+            $.each(data, function (key, val) {
+                actData[key] = val
+                
+            });
+            console.log(actData)
+
+            $.each(windowVal, function (i, item) {
+                $('#window').append($('<option>', {
+                    value: item.value,
+                    text: item.text
+                }));
+            });
+            $.each(feelVal, function (i, item) {
+                $('#feel').append($('<option>', {
+                    value: item.value,
+                    text: item.text
+                }));
+            });
+            $.each(homeVal, function (i, item) {
+                $('#home').append($('<option>', {
+                    value: item.value,
+                    text: item.text
+                }));
+            });
+            
+            $("#rad").val(actData["rad"])
+            $("#window").val(actData["window"]);
+            $("#feel").val(actData["feel"]);
+            $("#home").val(actData["home"]);
+
+        });
+    }
+
+    fetch_state()
+
+    function submit() {
+        let data = { 
+            "window": $("#window").children("option:selected").val(),
+            "home": $("#home").children("option:selected").val(),
+            "feel": $("#feel").children("option:selected").val(),
+            "rad": $("#rad").val() }
+
+        $.ajax({
+            type: 'PUT',
+            url: 'http://pi.hole:8000/state',
+            contentType: 'application/json',
+            data: JSON.stringify(data), // access in body
+        }).done(function () {
+            $('#title').text("updated")
+        }).fail(function (msg) {
+            console.log('FAIL');
+        }).always(function (msg) {
+            console.log('ALWAYS');
+        });
+    }
+
+</script>
+</body>
